@@ -34,8 +34,6 @@ public class SkinSwitch : MonoBehaviour
 
     private string _filePath;
 
-    private bool _canContinue = false;
-
     private bool _isAnimated;
 
     private string _uid = "null";
@@ -65,8 +63,6 @@ public class SkinSwitch : MonoBehaviour
         // disable WebGLInput.captureAllKeyboardInput so elements in web page can handle keyboard inputs
 #endif
         _filePath = $"{Application.persistentDataPath}/Files/";
-        Position pos;
-        Debug.Log(Enum.TryParse<Position>("heh", out pos) + pos.ToString());
         SendStartEvent();
     }
 
@@ -127,10 +123,10 @@ public class SkinSwitch : MonoBehaviour
                     //     continue;
                     // }
 
-                    StartCoroutine(GetModel(input.Link,
+                    yield return StartCoroutine(GetModel(input.Link,
                     (string error) =>
                     {
-                        StopError("", error, Status.LOADING_FAILURE, _isAnimated);
+                        StopError(error, Status.LOADING_FAILURE, _isAnimated);
                     },
                     () =>
                     {
@@ -142,10 +138,10 @@ public class SkinSwitch : MonoBehaviour
                 }
                 else
                 {
-                    StartCoroutine(GetTexture(input.Link,
+                    yield return StartCoroutine(GetTexture(input.Link,
                     (string error) =>
                     {
-                        StopError("", error, Status.LOADING_FAILURE, _isAnimated);
+                        StopError(error, Status.LOADING_FAILURE, _isAnimated);
                     },
                     (Texture2D texture) =>
                     {
@@ -154,15 +150,10 @@ public class SkinSwitch : MonoBehaviour
                     }
                     ));
                 }
-
-                while (_canContinue == false)
-                {
-                    yield return null;
-                }
             }
             else
             {
-                StopError("", "incorrect format", Status.INCORRECT_FORMAT, _isAnimated);
+                StopError("incorrect format", Status.INCORRECT_FORMAT, _isAnimated);
                 break;
             }
         }
@@ -183,7 +174,7 @@ public class SkinSwitch : MonoBehaviour
                 }
                 catch
                 {
-                    StopError("", "setting texture error", Status.SETTING_FAILURE, _isAnimated);
+                    StopError("setting texture error", Status.SETTING_FAILURE, _isAnimated);
                 }
             }
             else
@@ -199,7 +190,7 @@ public class SkinSwitch : MonoBehaviour
                 }
                 catch
                 {
-                    StopError("", "setting model error", Status.SETTING_FAILURE, _isAnimated);
+                    StopError("setting model error", Status.SETTING_FAILURE, _isAnimated);
                 }
             }
         }
@@ -222,15 +213,15 @@ public class SkinSwitch : MonoBehaviour
         return $"{_filePath}{filename}";
     }
 
-    public void StopError(string uid, string error, Status status, bool IsAnimated)
+    public void StopError(string error, Status status, bool IsAnimated)
     {
         StopAllCoroutines();
         if (IsAnimated)
         {
             _animator.SetBool("Loading", false);
-            SendCallback(JsonUtility.ToJson(new OutputFormat(uid == "" ? _uid : uid, "animation ended", Status.ANIMATION_END)));
+            SendCallback(JsonUtility.ToJson(new OutputFormat(_uid, "animation ended", Status.ANIMATION_END)));
         }
-        SendCallback(JsonUtility.ToJson(new OutputFormat(uid == "" ? _uid : uid, error, status)));
+        SendCallback(JsonUtility.ToJson(new OutputFormat(_uid, error, status)));
         _inProgress = false;
     }
 
